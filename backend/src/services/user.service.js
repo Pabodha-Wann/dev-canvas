@@ -3,7 +3,7 @@ import Project from '../models/Project.js';
 import Follower from '../models/Follower.js';
 
 export const updateUserService = async (userId, data) => {
-  const { bio, technologies, location, institute, contactNumber } = data;
+  const { bio, technologies, location, institute } = data;
   
   let techArray = [];
   if (typeof technologies === 'string') {
@@ -12,17 +12,16 @@ export const updateUserService = async (userId, data) => {
     techArray = technologies;
   }
 
-  const updateFields = {
-    bio,
-    technologies: techArray,
-    location,
-    institute,
-  };
-  if (contactNumber !== undefined) updateFields.contactNumber = contactNumber;
-
   const updatedUser = await User.findByIdAndUpdate(
     userId,
-    { $set: updateFields },
+    {
+      $set: {
+        bio,
+        technologies: techArray,
+        location,
+        institute,
+      },
+    },
     { new: true, runValidators: true }
   ).select('-__v');
 
@@ -31,7 +30,7 @@ export const updateUserService = async (userId, data) => {
 
 export const getUserByIdService = async (id) => {
   const user = await User.findById(id)
-    .select('name email username contactNumber profilePic role bio technologies location institute createdAt');
+    .select('name email profilePic role bio technologies location institute createdAt');
 
   if (!user) {
     return null;
