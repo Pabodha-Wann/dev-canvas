@@ -1,11 +1,24 @@
-// Google OAuth routes
+// Google OAuth & Asgardeo OIDC routes
 import express from 'express'
 import passport from 'passport'
 import authMiddleware from '../middleware/auth.middleware.js'
-import { handleGoogleCallback, selectRole, getMe, updateProfile } from '../controllers/auth.controller.js'
-
+import {
+    handleGoogleCallback,
+    initiateAsgardeoLogin,
+    handleAsgardeoCallback,
+    handleAsgardeoLogout,
+    selectRole,
+    getMe,
+    updateProfile
+} from '../controllers/auth.controller.js'
 
 const router = express.Router()
+
+// Asgardeo OIDC routes
+router.get('/asgardeo', initiateAsgardeoLogin)
+router.get('/asgardeo/callback', handleAsgardeoCallback)
+router.get('/asgardeo/logout', handleAsgardeoLogout)
+router.get('/logout', handleAsgardeoLogout)
 
 //redirect user to Google
 router.get('/google',

@@ -3,7 +3,12 @@ import mongoose from 'mongoose';
 const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
-    required: true,
+    sparse: true,
+    unique: true
+  },
+  asgardeoId: {
+    type: String,
+    sparse: true,
     unique: true
   },
   email: {
@@ -11,9 +16,16 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  username: {
+    type: String,
+    sparse: true
+  },
   name: {
     type: String,
     required: true
+  },
+  contactNumber: {
+    type: String
   },
   profilePic: {
     type: String

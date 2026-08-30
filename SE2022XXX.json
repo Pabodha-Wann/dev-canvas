@@ -1,0 +1,9 @@
+{
+  "sid": "SE2022XXX",
+  "name": "Name with Initials",
+  "app-url": "http://localhost:5173",
+  "git": "https://github.com/Pabodha-Wann/dev-canvas",
+  "blog": [
+    "https://medium.com/@yourusername/dev-canvas-assessment-2-security-and-oidc-blog"
+  ]
+}
