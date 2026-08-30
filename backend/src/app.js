@@ -39,12 +39,10 @@ app.use('/api/users', userRoutes);
 
 
 app.use((err, req, res, next) => {
-  console.error('[SERVER ERROR]', err.stack || err.message);
+  console.error(err.stack);
 
-  const status = err.status || (err.name === 'MulterError' || err.message.includes('Invalid file format') ? 400 : 500);
-  const message = process.env.NODE_ENV === 'production' && status === 500
-    ? "Internal Server Error"
-    : (err.message || "Internal Server Error");
+  const status = err.status || 500;
+  const message = err.message || "Internal Server Error";
 
   res.status(status).json({
     success: false,

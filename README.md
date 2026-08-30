@@ -1,50 +1,137 @@
-# 🎨 DevCanvas — Student Project Showcase Portal (Assessment 2 Enhanced)
+# 🎨 DevCanvas
 
 ![MERN Stack](https://img.shields.io/badge/Stack-MERN-blue?style=for-the-badge)
 ![Vite](https://img.shields.io/badge/Bundler-Vite-purple?style=for-the-badge)
-![OIDC](https://img.shields.io/badge/Auth-Asgardeo_OIDC-green?style=for-the-badge)
-![Security](https://img.shields.io/badge/Security-OWASP_Top_10_Hardened-red?style=for-the-badge)
+![Tailwind](https://img.shields.io/badge/Styling-TailwindCSS-06B6D4?style=for-the-badge)
+![Zustand](https://img.shields.io/badge/State-Zustand-orange?style=for-the-badge)
 
-**DevCanvas** is a modern, secure web portal designed to bridge the gap between computing students and tech recruiters. Students build rich project portfolios to showcase their innovations, while recruiters and faculty discover and interact with talent.
-
----
-
-## 🔒 Assessment 2 Security & OIDC Enhancements
-
-This project has been enhanced according to the **Assessment 2: Secure Web Application Development** guidelines:
-
-1. **OIDC Authentication with Asgardeo**: Full OpenID Connect integration using Asgardeo as the primary Identity Provider (IdP).
-2. **Access Token Validation**: Cryptographic signature verification using Asgardeo's JWKS (`RS256`), verifying issuer (`iss`), audience (`aud`), and expiration (`exp`).
-3. **Role-Based Access Control (RBAC)**: Strict role enforcement (`STUDENT`, `RECRUITER`, `ADMIN`) via `roleMiddleware`.
-4. **Ownership & IDOR Protection**: Server-derived identity enforcement. Project creation, editing, and deletion verify ownership (`project.studentId === req.user.id`).
-5. **NoSQL Injection & Input Validation**: Validation of MongoDB ObjectIds (`mongoose.Types.ObjectId.isValid`) across all route parameters.
-6. **File Upload Security**: Multer storage restricted strictly to valid image MIME types (`image/jpeg`, `image/png`, `image/webp`) with 5MB size limits.
-7. **OWASP Top 10 Hardening**: Production error message sanitization, Helmet security headers, CORS origin restrictions, and secret isolation.
+**DevCanvas** is a premium, modern platform designed to bridge the gap between talented university students and tech recruiters. Students can build sleek portfolios to showcase their projects, while recruiters can easily search, discover, and connect with fresh talent.
 
 ---
 
-## 📋 Assessment Functionality Mapping
+## ✨ Features
 
-| Official Assessment Requirement | DevCanvas Domain Mapping | Technical Implementation |
-| :--- | :--- | :--- |
-| **Stall Vendor** | **Student / Project Creator** | User with role `STUDENT` |
-| **Vendor Profile** | **Student Profile** | `User` model (`name`, `email`, `profilePic`, `bio`, `technologies`, `location`, `institute`) |
-| **Stall Reservation Request** | **Student Project Submission** | `Project` model (`title`, `description`, `githubUrl`, `demoUrl`, `tags`, `coverImage`, `images`) |
-| **View Vendor's Own Reservations** | **Student's Own Projects** | `GET /api/projects?owner=me` (filtered server-side by authenticated `req.user.id`) |
-| **Exhibition Organizer** | **Admin / Portal Organizer** | User with role `ADMIN` |
-| **Organizer Management** | **Admin Project & User Management** | `/api/admin/projects` (view/delete submissions), `/api/admin/users` (manage/disable users) |
+- **Google OAuth 2.0:** Secure, seamless, password-less login.
+- **Role-Based Access:** Distinct experiences for `STUDENTS` (upload portfolios), `RECRUITERS` (search and like), and `ADMINS` (system moderation).
+- **Project Portfolios:** Students can upload projects with cover images, screenshot galleries, GitHub/Demo links, and technology tags.
+- **Advanced Real-Time Search:** Client-side dynamic search to instantly filter projects by tags, title, or student name.
+- **Cloudinary Integration:** Robust image uploading system backed by Multer with 5MB memory constraints.
+- **Event-Driven Notifications:** Real-time background event listeners generate notifications when projects are liked.
+- **Premium UI:** Built with Tailwind CSS featuring backdrop blurs, glassmorphism, responsive grids, and micro-animations.
 
 ---
 
-## 🛠️ Local Setup & Deployment
+## 🏗️ System Architecture
+
+DevCanvas utilizes a decoupled, Monorepo architecture separating the Vite-powered React frontend from the Node/Express backend.
+
+```mermaid
+graph TD
+    %% Styling
+    classDef frontend fill:#3b82f6,stroke:#1e3a8a,stroke-width:2px,color:#fff
+    classDef backend fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff
+    classDef db fill:#f59e0b,stroke:#b45309,stroke-width:2px,color:#fff
+    classDef external fill:#8b5cf6,stroke:#4c1d95,stroke-width:2px,color:#fff
+
+    subgraph Client [Frontend Layer]
+        UI[React UI + Tailwind]:::frontend
+        State[Zustand Store]:::frontend
+        API[Axios API Client]:::frontend
+    end
+
+    subgraph Server [Backend REST API]
+        Router[Express Router]:::backend
+        Auth[Passport Google OAuth]:::backend
+        Controllers[Controllers & Services]:::backend
+        Events[EventEmitter Bus]:::backend
+    end
+
+    subgraph Database
+        Mongo[(MongoDB Atlas)]:::db
+    end
+
+    subgraph Cloud Services
+        Cloudinary[Cloudinary Image CDN]:::external
+        Google[Google Auth Server]:::external
+    end
+
+    %% Flow
+    UI <-->|Actions / Data| State
+    State <-->|HTTP Requests| API
+    API <-->|JSON over HTTP| Router
+    Router --> Auth
+    Auth <-->|Verify Tokens| Google
+    Router --> Controllers
+    Controllers --> Events
+    Controllers <-->|Mongoose Queries| Mongo
+    Controllers <-->|Image Buffer| Cloudinary
+```
+
+---
+
+## 🔔 Event-Driven Notification System
+
+To ensure a fast, non-blocking user experience, DevCanvas utilizes an asynchronous event-driven architecture for social interactions (like notifications).
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Recruiter
+    participant Controller as Like Controller
+    participant DB as MongoDB
+    participant EventBus as Node EventEmitter
+    participant Listener as Notification Listener
+    actor Student
+
+    Recruiter->>Controller: POST /api/likes/:projectId
+    Controller->>DB: Save Like to Database
+    DB-->>Controller: Success
+    
+    %% The critical async part
+    Note over Controller,EventBus: Controller emits event and finishes immediately
+    Controller->>EventBus: Emit "project:liked" event
+    Controller-->>Recruiter: 200 OK (Like Successful!)
+    
+    %% Background processing
+    EventBus->>Listener: Catch "project:liked"
+    Listener->>DB: Create Notification Document
+    DB-->>Listener: Saved
+    
+    Note right of Student: Sees notification icon on next UI update
+```
+
+---
+
+## 🚀 Tech Stack
+
+### Frontend
+- **Framework:** React 18 powered by Vite
+- **Styling:** Tailwind CSS
+- **State Management:** Zustand
+- **Routing:** React Router v6
+- **HTTP Client:** Axios
+- **Notifications:** React Toastify
+- **Icons:** Lucide React
+
+### Backend
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** MongoDB & Mongoose
+- **Authentication:** Passport.js (Google OAuth 2.0) & JSON Web Tokens (JWT)
+- **Security:** Helmet, CORS
+- **File Upload:** Multer & Cloudinary
+
+---
+
+## 🛠️ Local Development Setup
 
 ### Prerequisites
-- Node.js (v18 or v20+)
-- MongoDB database (Local or MongoDB Atlas)
-- Asgardeo Account & OIDC Application (See [docs/ASGARDEO_SETUP.md](docs/ASGARDEO_SETUP.md))
-- Cloudinary Account (for project image CDN)
+- Node.js (v18+)
+- MongoDB connection string (Local or Atlas)
+- Cloudinary Account (for image uploads)
+- Google Cloud Console (for OAuth credentials)
 
-### 1. Installation
+### 1. Clone & Install
 ```bash
 git clone https://github.com/Pabodha-Wann/dev-canvas.git
 cd dev-canvas
@@ -58,134 +145,63 @@ cd ../frontend
 npm install
 ```
 
-### 2. Environment Configuration
-
-Create `.env` in the **backend** folder:
+### 2. Environment Variables
+Create a `.env` file in the **backend** directory:
 ```env
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/devcanvas
+PORT=5000
+MONGODB_URI=your_mongodb_uri
 CLIENT_URL=http://localhost:5173
-SERVER_URL=http://localhost:3000
-JWT_SECRET=your_super_secret_jwt_key
+JWT_SECRET=your_super_secret_key
 NODE_ENV=development
 
-# Asgardeo OIDC Credentials
-ASGARDEO_CLIENT_ID=your_asgardeo_client_id
-ASGARDEO_CLIENT_SECRET=your_asgardeo_client_secret
-ASGARDEO_TENANT=your_tenant_name
-ASGARDEO_BASE_URL=https://api.asgardeo.io/t/your_tenant_name
-ASGARDEO_ISSUER=https://api.asgardeo.io/t/your_tenant_name/oauth2/token
-ASGARDEO_REDIRECT_URI=http://localhost:3000/api/auth/asgardeo/callback
-ASGARDEO_SCOPES=openid profile email
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# Cloudinary CDN Credentials
+# Cloudinary
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-Create `.env` in the **frontend** folder:
+Create a `.env` file in the **frontend** directory:
 ```env
-VITE_API_URL=http://localhost:3000/api
+VITE_API_URL=http://localhost:5000/api
 ```
 
----
+### 3. Run the Application
+Run both servers simultaneously in separate terminals:
 
-## 🗄️ Database Creation & Initialization Script
-
-To initialize MongoDB database indexes and collections locally:
-
+**Terminal 1 (Backend):**
 ```bash
 cd backend
-node -e "
-import mongoose from 'mongoose';
-import User from './src/models/User.js';
-import Project from './src/models/Project.js';
-
-async function initDB() {
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/devcanvas');
-  console.log('MongoDB Connected!');
-  await User.createIndexes();
-  await Project.createIndexes();
-  console.log('Database Indexes Created Successfully!');
-  process.exit(0);
-}
-initDB();
-"
+npm run dev
 ```
 
----
-
-## 🔒 Running with HTTPS Configuration
-
-### Development Mode (Local HTTPS)
-To run the Vite frontend and Express backend over HTTPS during development:
-1. Generate dev TLS certificates (e.g., using `mkcert`):
-   ```bash
-   mkcert -install
-   mkcert localhost
-   ```
-2. Place `localhost.pem` and `localhost-key.pem` in `backend/certs/`.
-3. Set `SERVER_URL=https://localhost:3000` and `CLIENT_URL=https://localhost:5173` in `.env`.
-
-### Production TLS Architecture
-In production, deploy the Express API behind an NGINX reverse proxy configured with Let's Encrypt TLS certificates:
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name devcanvas.example.com;
-
-    ssl_certificate /etc/letsencrypt/live/devcanvas.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/devcanvas.example.com/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-    }
-}
-```
-
----
-
-## 🧪 Security & API Verification Testing
-
-Run the automated test suite to verify OWASP controls and endpoints:
-
+**Terminal 2 (Frontend):**
 ```bash
-cd backend
-node scripts/verify-security.js
+cd frontend
+npm run dev
 ```
 
-### Test Evidence Output
-```text
-====================================================
-   DEVCANVAS ASSESSMENT 2 — SECURITY & API TESTS    
-====================================================
-
-[PASS] Backend Health Check (/api/health)
-[PASS] Unauthenticated POST /api/projects returns HTTP 401
-[PASS] Forged Bearer Token on /api/auth/me returns HTTP 401
-[PASS] Invalid ObjectId in URL parameter returns HTTP 400
-[PASS] Public GET /api/projects returns HTTP 200
-[PASS] Asgardeo OIDC Endpoint Configuration Validated
-[PASS] Database Schema: User.asgardeoId field present & indexed
-
-====================================================
- SUMMARY: 7 PASSED, 0 FAILED
-====================================================
-```
+The app will be running at `http://localhost:5173`.
 
 ---
 
-## 📁 Additional Documentation Links
+## 📁 API Structure
 
-- **Asgardeo Setup Guide**: [docs/ASGARDEO_SETUP.md](docs/ASGARDEO_SETUP.md)
-- **OWASP Top 10 Report**: [docs/SECURITY.md](docs/SECURITY.md)
+| Endpoint | Method | Access | Description |
+|----------|--------|--------|-------------|
+| `/api/auth/google` | GET | Public | Initiate Google Login |
+| `/api/auth/profile` | GET | Private | Get logged-in user details |
+| `/api/projects` | GET | Public | Fetch all projects |
+| `/api/projects` | POST | Student | Create a new project |
+| `/api/projects/:id` | DELETE | Owner | Delete a project |
+| `/api/likes/:projectId`| POST | Recruiter | Toggle a project like |
+| `/api/notifications`| GET | Private | Fetch unread notifications|
 
 ---
 
-## 👥 Authors
-Developed for Assessment 2: Secure Web Application Development.
+## 👥 Contributors
+Developed as part of the SE/2022 batch practical assignment. 
+*Architected and led by the core DevCanvas Team.*
